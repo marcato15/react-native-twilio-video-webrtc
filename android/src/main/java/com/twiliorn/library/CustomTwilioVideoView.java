@@ -75,6 +75,9 @@ import com.twilio.video.VideoFormat;
 import org.webrtc.voiceengine.WebRtcAudioManager;
 
 import tvi.webrtc.Camera1Enumerator;
+import tvi.webrtc.VideoFrame;
+import tvi.webrtc.VideoProcessor;
+import tvi.webrtc.VideoSink;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -321,6 +324,55 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
         if (thumbnailVideoView != null && localVideoTrack != null) {
             localVideoTrack.addSink(thumbnailVideoView);
         }
+
+        localVideoTrack.getVideoSource().setVideoProcessor(new VideoProcessor() {
+            private VideoSink videoSink;
+
+            @Override
+            public void onCapturerStarted(boolean success) {}
+
+            @Override
+            public void onCapturerStopped() {}
+
+            @Override
+            public void onFrameCaptured(
+                VideoFrame frame,
+                VideoProcessor.FrameAdaptationParameters params
+            ) {
+                int scaledWidth = params.scaleWidth;
+                int scaledHeight = params.scaleHeight;
+                int rotation = frame.getRotation();
+                if (!params.drop) {
+                    if (rotation == 270 || rotation == 90) {
+                        scaledHeight = scaledHeight / 16 * 16;
+                    } else {
+                        scaledWidth = scaledWidth / 16 * 16;
+                    }
+                }
+                VideoFrame.Buffer adaptedBuffer = frame.getBuffer().cropAndScale(
+                    params.cropX,
+                    params.cropY,
+                    params.cropWidth,
+                    params.cropHeight,
+                    scaledWidth,
+                    scaledHeight
+                );
+                this.onFrameCaptured(new VideoFrame(adaptedBuffer, rotation, params.timestampNs));
+                // frame.release();
+            }
+
+            @Override
+            public void onFrameCaptured(VideoFrame frame) {
+                videoSink.onFrame(frame);
+            }
+
+            @Override
+            public void setSink(VideoSink sink) {
+                this.videoSink = sink;
+            }
+        });
+        
+
         setThumbnailMirror();
         return true;
     }
