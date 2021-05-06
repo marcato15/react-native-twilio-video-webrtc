@@ -69,8 +69,6 @@ import com.twilio.video.StatsReport;
 import com.twilio.video.TrackPublication;
 import com.twilio.video.TwilioException;
 import com.twilio.video.Video;
-import com.twilio.video.VideoDimensions;
-import com.twilio.video.VideoFormat;
 
 import org.webrtc.voiceengine.WebRtcAudioManager;
 
@@ -238,10 +236,6 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
 
     // ===== SETUP =================================================================================
 
-    private VideoFormat buildVideoFormat() {
-        return new VideoFormat(VideoDimensions.CIF_VIDEO_DIMENSIONS, 15);
-    }
-
     private CameraCapturer createCameraCaputer(Context context, String cameraId) {
         CameraCapturer newCameraCapturer = null;
         try {
@@ -317,7 +311,7 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
             return false;
         }
 
-        localVideoTrack = LocalVideoTrack.create(getContext(), enableVideo, cameraCapturer, buildVideoFormat());
+        localVideoTrack = LocalVideoTrack.create(getContext(), enableVideo, cameraCapturer);
         if (thumbnailVideoView != null && localVideoTrack != null) {
             localVideoTrack.addSink(thumbnailVideoView);
         }
@@ -338,7 +332,7 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
              * If the local video track was released when the app was put in the background, recreate.
              */
             if (cameraCapturer != null && localVideoTrack == null) {
-                localVideoTrack = LocalVideoTrack.create(getContext(), isVideoEnabled, cameraCapturer, buildVideoFormat());
+                localVideoTrack = LocalVideoTrack.create(getContext(), isVideoEnabled, cameraCapturer);
             }
 
             if (localVideoTrack != null) {
