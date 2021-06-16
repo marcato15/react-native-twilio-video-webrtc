@@ -36,7 +36,7 @@ import com.facebook.react.uimanager.ThemedReactContext;
 import com.facebook.react.uimanager.events.RCTEventEmitter;
 import com.twilio.video.AudioTrackPublication;
 import com.twilio.video.BaseTrackStats;
-import com.twilio.video.CameraCapturer;
+import com.twilio.video.Camera2Capturer;
 import com.twilio.video.ConnectOptions;
 import com.twilio.video.LocalAudioTrack;
 import com.twilio.video.LocalAudioTrackPublication;
@@ -72,7 +72,7 @@ import com.twilio.video.Video;
 
 import org.webrtc.voiceengine.WebRtcAudioManager;
 
-import tvi.webrtc.Camera1Enumerator;
+import tvi.webrtc.Camera2Enumerator;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -187,7 +187,7 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
     private static PatchedVideoView thumbnailVideoView;
     private static LocalVideoTrack localVideoTrack;
 
-    private static CameraCapturer cameraCapturer;
+    private static Camera2Capturer cameraCapturer;
     private LocalAudioTrack localAudioTrack;
     private AudioManager audioManager;
     private int previousAudioMode;
@@ -239,13 +239,13 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
 
     // ===== SETUP =================================================================================
 
-    private CameraCapturer createCameraCaputer(Context context, String cameraId) {
-        CameraCapturer newCameraCapturer = null;
+    private Camera2Capturer createCameraCaputer(Context context, String cameraId) {
+        Camera2Capturer newCameraCapturer = null;
         try {
-            newCameraCapturer = new CameraCapturer(
+            newCameraCapturer = new Camera2Capturer(
                     context,
                     cameraId,
-                    new CameraCapturer.Listener() {
+                    new Camera2Capturer.Listener() {
                         @Override
                         public void onFirstFrameAvailable() {
                         }
@@ -259,7 +259,7 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
                         }
 
                         @Override
-                        public void onError(int i) {
+                        public void onError(Camera2Capturer.Exception camera2CapturerException) {
                             Log.i("CustomTwilioVideoView", "Error getting camera");
                         }
                     }
@@ -271,7 +271,7 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
     }
 
     private void buildDeviceInfo() {
-        Camera1Enumerator enumerator = new Camera1Enumerator();
+        Camera2Enumerator enumerator = new Camera2Enumerator(getContext());
         String[] deviceNames = enumerator.getDeviceNames();
         backFacingDevice = null;
         frontFacingDevice = null;
@@ -586,7 +586,7 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
         }
 
     private static boolean isCurrentCameraSourceBackFacing() {
-        return cameraCapturer != null && cameraCapturer.getCameraId() == backFacingDevice;
+        return cameraCapturer != null && cameraCapturer.getCameraId().equals(backFacingDevice);
     }
 
     // ===== BUTTON LISTENERS ======================================================================
@@ -613,7 +613,7 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
     }
 
     public void toggleVideo(boolean enabled) {
-      isVideoEnabled = enabled;
+        isVideoEnabled = enabled;
 
         if (cameraCapturer == null && enabled) {
             String fallbackCameraType = cameraType == null ? CustomTwilioVideoView.FRONT_CAMERA_TYPE : cameraType;
