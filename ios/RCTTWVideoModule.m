@@ -80,6 +80,7 @@ TVIVideoFormat *RCTTWVideoModuleCameraSourceSelectVideoFormatBySize(AVCaptureDev
 RCT_EXPORT_MODULE();
 
 - (void)dealloc {
+  NSLog(@"XCapture: dealloc");
   [self clearCameraInstance];
 }
 
@@ -165,19 +166,14 @@ RCT_EXPORT_METHOD(setRemoteAudioPlayback:(NSString *)participantSid enabled:(BOO
 }
 
 RCT_EXPORT_METHOD(startLocalVideo) {
-  TVICameraSourceOptions *options = [TVICameraSourceOptions optionsWithBlock:^(TVICameraSourceOptionsBuilder * _Nonnull builder) {
-
-  }];
-  self.camera = [[TVICameraSource alloc] initWithOptions:options delegate:self];
-  if (self.camera == nil) {
-      return;
-  }
-  self.localVideoTrack = [TVILocalVideoTrack trackWithSource:self.camera enabled:NO name:@"camera"];
+    NSLog(@"XCapture: js startLocalVideo");
 }
 
 - (void)startCameraCapture:(NSString *)cameraType {
+  NSLog(@"XCapture: Starting camera capture");
   if (self.camera == nil) {
-    return;
+    NSLog(@"XCapture: Reinit camera");
+    self.camera = [[TVICameraSource alloc] initWithDelegate:self];
   }
   AVCaptureDevice *camera;
     if ([cameraType isEqualToString:@"back"]) {
@@ -186,10 +182,14 @@ RCT_EXPORT_METHOD(startLocalVideo) {
     camera = [TVICameraSource captureDeviceForPosition:AVCaptureDevicePositionFront];
   }
 
+
+
   [self.camera startCaptureWithDevice:camera completion:^(AVCaptureDevice *device,
           TVIVideoFormat *startFormat,
           NSError *error) {
-      if (!error) {
+      if (error != nil) {
+        NSLog(@"XCapture: Start capture failed with error.\ncode = %lu error = %@", error.code, error.localizedDescription);
+      } else {
           for (TVIVideoView *renderer in self.localVideoTrack.renderers) {
             [self updateLocalViewMirroring:renderer];
           }
@@ -203,6 +203,7 @@ RCT_EXPORT_METHOD(startLocalAudio) {
 }
 
 RCT_EXPORT_METHOD(stopLocalVideo) {
+    NSLog(@"XCapture: js stopLocalVideo");
     [self clearCameraInstance];
 }
 
@@ -211,6 +212,7 @@ RCT_EXPORT_METHOD(stopLocalAudio) {
 }
 
 RCT_EXPORT_METHOD(publishLocalVideo) {
+  NSLog(@"XCapture: publishing local video");
   if(self.localVideoTrack != nil){
     TVILocalParticipant *localParticipant = self.room.localParticipant;
     [localParticipant publishVideoTrack:self.localVideoTrack];
@@ -223,6 +225,7 @@ RCT_EXPORT_METHOD(publishLocalAudio) {
 }
 
 RCT_EXPORT_METHOD(unpublishLocalVideo) {
+  NSLog(@"XCapture: unpublishing local video");
   if(self.localVideoTrack != nil){
     TVILocalParticipant *localParticipant = self.room.localParticipant;
     [localParticipant unpublishVideoTrack:self.localVideoTrack];
@@ -244,26 +247,22 @@ RCT_REMAP_METHOD(setLocalAudioEnabled, enabled:(BOOL)enabled setLocalAudioEnable
 
 // set a default for setting local video enabled
 - (bool)_setLocalVideoEnabled:(bool)enabled {
+    NSLog(@"XCapture: _setLocalVideoEnabled default");
     return [self _setLocalVideoEnabled:enabled cameraType:@"front"];
 }
 
 - (bool)_setLocalVideoEnabled:(bool)enabled cameraType:(NSString *)cameraType {
+  NSLog(@"XCapture: _setLocalVideoEnabled with arg");
   if (self.localVideoTrack != nil) {
       [self.localVideoTrack setEnabled:enabled];
-      if (self.camera) {
-          if (enabled) {
-            [self startCameraCapture:cameraType];
-          } else {
-            [self clearCameraInstance];
-          }
-          return enabled;
-      }
+      return enabled;
   }
   return false;
 }
 
 RCT_REMAP_METHOD(setLocalVideoEnabled, enabled:(BOOL)enabled setLocalVideoEnabledWithResolver:(RCTPromiseResolveBlock)resolve
                  rejecter:(RCTPromiseRejectBlock)reject) {
+  NSLog(@"XCapture: js setLocalVideoEnabled");
   bool result = [self _setLocalVideoEnabled:enabled];
   resolve(@(result));
 }
@@ -398,7 +397,17 @@ RCT_EXPORT_METHOD(getStats) {
 }
 
 RCT_EXPORT_METHOD(connect:(NSString *)accessToken roomName:(NSString *)roomName enableAudio:(BOOL *)enableAudio enableVideo:(BOOL *)enableVideo encodingParameters:(NSDictionary *)encodingParameters enableNetworkQualityReporting:(BOOL *)enableNetworkQualityReporting dominantSpeakerEnabled:(BOOL *)dominantSpeakerEnabled cameraType:(NSString *)cameraType) {
-  [self _setLocalVideoEnabled:enableVideo cameraType:cameraType];
+    NSLog(@"XCapture: js connect");
+
+  // Moved from startLocalVideo
+  TVICameraSourceOptions *options = [TVICameraSourceOptions optionsWithBlock:^(TVICameraSourceOptionsBuilder * _Nonnull builder) {
+
+  }];
+  self.camera = [[TVICameraSource alloc] initWithOptions:options delegate:self];
+  self.localVideoTrack = [TVILocalVideoTrack trackWithSource:self.camera enabled:enableVideo name:@"camera"];
+  [self startCameraCapture:cameraType]; 
+  // end Moved from startLocalVideo
+
   if (self.localAudioTrack) {
     [self.localAudioTrack setEnabled:enableAudio];
   }
@@ -449,14 +458,17 @@ RCT_EXPORT_METHOD(sendString:(nonnull NSString *)message) {
 }
 
 RCT_EXPORT_METHOD(disconnect) {
+  NSLog(@"XCapture: js disconnect");
   [self clearCameraInstance];
   [self.room disconnect];
 }
 
 - (void)clearCameraInstance {
+    NSLog(@"XCapture: clearCameraInstance");
     // We are done with camera
     if (self.camera) {
         [self.camera stopCapture];
+        self.camera = nil;
     }
 }
 
