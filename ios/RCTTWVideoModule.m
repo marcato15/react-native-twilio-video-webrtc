@@ -165,14 +165,6 @@ RCT_EXPORT_METHOD(setRemoteAudioPlayback:(NSString *)participantSid enabled:(BOO
 }
 
 RCT_EXPORT_METHOD(startLocalVideo) {
-  TVICameraSourceOptions *options = [TVICameraSourceOptions optionsWithBlock:^(TVICameraSourceOptionsBuilder * _Nonnull builder) {
-
-  }];
-  self.camera = [[TVICameraSource alloc] initWithOptions:options delegate:self];
-  if (self.camera == nil) {
-      return;
-  }
-  self.localVideoTrack = [TVILocalVideoTrack trackWithSource:self.camera enabled:NO name:@"camera"];
 }
 
 - (void)startCameraCapture:(NSString *)cameraType {
@@ -189,7 +181,9 @@ RCT_EXPORT_METHOD(startLocalVideo) {
   [self.camera startCaptureWithDevice:camera completion:^(AVCaptureDevice *device,
           TVIVideoFormat *startFormat,
           NSError *error) {
-      if (!error) {
+      if (error != nil) {
+        NSLog(@"Start capture failed with error.\ncode = %lu error = %@", error.code, error.localizedDescription);
+      } else {
           for (TVIVideoView *renderer in self.localVideoTrack.renderers) {
             [self updateLocalViewMirroring:renderer];
           }
@@ -250,14 +244,7 @@ RCT_REMAP_METHOD(setLocalAudioEnabled, enabled:(BOOL)enabled setLocalAudioEnable
 - (bool)_setLocalVideoEnabled:(bool)enabled cameraType:(NSString *)cameraType {
   if (self.localVideoTrack != nil) {
       [self.localVideoTrack setEnabled:enabled];
-      if (self.camera) {
-          if (enabled) {
-            [self startCameraCapture:cameraType];
-          } else {
-            [self clearCameraInstance];
-          }
-          return enabled;
-      }
+      return enabled;
   }
   return false;
 }
@@ -398,7 +385,13 @@ RCT_EXPORT_METHOD(getStats) {
 }
 
 RCT_EXPORT_METHOD(connect:(NSString *)accessToken roomName:(NSString *)roomName enableAudio:(BOOL *)enableAudio enableVideo:(BOOL *)enableVideo encodingParameters:(NSDictionary *)encodingParameters enableNetworkQualityReporting:(BOOL *)enableNetworkQualityReporting dominantSpeakerEnabled:(BOOL *)dominantSpeakerEnabled cameraType:(NSString *)cameraType) {
-  [self _setLocalVideoEnabled:enableVideo cameraType:cameraType];
+  TVICameraSourceOptions *options = [TVICameraSourceOptions optionsWithBlock:^(TVICameraSourceOptionsBuilder * _Nonnull builder) {
+
+  }];
+  self.camera = [[TVICameraSource alloc] initWithOptions:options delegate:self];
+  self.localVideoTrack = [TVILocalVideoTrack trackWithSource:self.camera enabled:enableVideo name:@"camera"];
+  [self startCameraCapture:cameraType]; 
+
   if (self.localAudioTrack) {
     [self.localAudioTrack setEnabled:enableAudio];
   }
@@ -457,6 +450,7 @@ RCT_EXPORT_METHOD(disconnect) {
     // We are done with camera
     if (self.camera) {
         [self.camera stopCapture];
+        self.camera = nil;
     }
 }
 
