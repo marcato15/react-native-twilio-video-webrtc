@@ -16,14 +16,20 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.graphics.ImageFormat;
+import android.hardware.camera2.CameraCharacteristics;
+import android.hardware.camera2.CameraManager;
+import android.hardware.camera2.CameraMetadata;
+import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.AudioAttributes;
 import android.media.AudioFocusRequest;
 import android.media.AudioManager;
+import androidx.annotation.RequiresApi;
 import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
-import android.support.annotation.NonNull;
-import android.support.annotation.StringDef;
+import androidx.annotation.NonNull;
+import androidx.annotation.StringDef;
 import android.util.Log;
 import android.view.View;
 
@@ -188,6 +194,7 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
     private static LocalVideoTrack localVideoTrack;
 
     private static Camera2Capturer cameraCapturer;
+    private CameraManager cameraManager;
     private LocalAudioTrack localAudioTrack;
     private AudioManager audioManager;
     private int previousAudioMode;
@@ -210,6 +217,7 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
         super(context);
         this.themedReactContext = context;
         this.eventEmitter = themedReactContext.getJSModule(RCTEventEmitter.class);
+        this.cameraManager = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
 
         // add lifecycle for onResume and on onPause
         themedReactContext.addLifecycleEventListener(this);
@@ -271,17 +279,60 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
     }
 
     private void buildDeviceInfo() {
-        Camera2Enumerator enumerator = new Camera2Enumerator(getContext());
-        String[] deviceNames = enumerator.getDeviceNames();
         backFacingDevice = null;
         frontFacingDevice = null;
-        for (String deviceName : deviceNames) {
-            if (enumerator.isBackFacing(deviceName) && enumerator.getSupportedFormats(deviceName).size() > 0) {
-                backFacingDevice = deviceName;
-            } else if (enumerator.isFrontFacing(deviceName) && enumerator.getSupportedFormats(deviceName).size() > 0) {
-                frontFacingDevice = deviceName;
+        Camera2Enumerator enumerator = new Camera2Enumerator(getContext());
+        for (String cameraId : enumerator.getDeviceNames()) {
+            if (isCameraIdSupported(cameraId)) {
+                if (enumerator.isBackFacing(cameraId)) {
+                    backFacingDevice = cameraId;
+                } else if (enumerator.isFrontFacing(cameraId)) {
+                    frontFacingDevice = cameraId;
+                }
             }
         }
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+    private boolean isCameraIdSupported(String cameraId) {
+        boolean isMonoChromeSupported = false;
+        boolean isPrivateImageFormatSupported = false;
+        CameraCharacteristics cameraCharacteristics;
+        try {
+            cameraCharacteristics = cameraManager.getCameraCharacteristics(cameraId);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+        /*
+         * This is a temporary work around for a RuntimeException that occurs on devices which contain cameras
+         * that do not support ImageFormat.PRIVATE output formats. A long term fix is currently in development.
+         * https://github.com/twilio/video-quickstart-android/issues/431
+         */
+        final StreamConfigurationMap streamMap =
+            cameraCharacteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+
+        if (streamMap != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            isPrivateImageFormatSupported = streamMap.isOutputSupportedFor(ImageFormat.PRIVATE);
+        }
+
+        /*
+         * Read the color filter arrangements of the camera to filter out the ones that support
+         * SENSOR_INFO_COLOR_FILTER_ARRANGEMENT_MONO or SENSOR_INFO_COLOR_FILTER_ARRANGEMENT_NIR.
+         * Visit this link for details on supported values - https://developer.android.com/reference/android/hardware/camera2/CameraCharacteristics#SENSOR_INFO_COLOR_FILTER_ARRANGEMENT
+         */
+        Integer colorFilterArrangement =
+            cameraCharacteristics.get(
+                CameraCharacteristics.SENSOR_INFO_COLOR_FILTER_ARRANGEMENT);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && colorFilterArrangement != null) {
+            isMonoChromeSupported =
+                colorFilterArrangement
+                        == CameraMetadata.SENSOR_INFO_COLOR_FILTER_ARRANGEMENT_MONO
+                    || colorFilterArrangement
+                        == CameraMetadata.SENSOR_INFO_COLOR_FILTER_ARRANGEMENT_NIR;
+        }
+        return isPrivateImageFormatSupported && !isMonoChromeSupported;
     }
 
     private boolean createLocalVideo(boolean enableVideo, String cameraType) {
