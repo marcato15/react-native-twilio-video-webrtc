@@ -107,11 +107,11 @@ import UIKit
         return captureDevice.hasTorch && captureDevice.isTorchAvailable
     }
 
-    public func addVideoSink(sink: VideoSink) {
+    public func addVideoSink(sink: StandardVideoSink) {
         sinks.add(sink)
     }
 
-    public func removeVideoSink(sink: VideoSink) {
+    public func removeVideoSink(sink: StandardVideoSink) {
         sinks.remove(sink)
     }
 
@@ -271,7 +271,7 @@ extension DefaultCameraCaptureSource: AVCaptureVideoDataOutputSampleBufferDelega
     public func captureOutput(_: AVCaptureOutput,
                               didOutput sampleBuffer: CMSampleBuffer,
                               from _: AVCaptureConnection) {
-        guard let frame = VideoFrame(sampleBuffer: sampleBuffer) else {
+        guard let frame = StandardVideoFrame(sampleBuffer: sampleBuffer) else {
             handleCaptureFailed(reason: .invalidFrame)
             logger.error(msg: "DefaultCameraCaptureSource could not convert captured CMSampleBuffer to video frame")
 

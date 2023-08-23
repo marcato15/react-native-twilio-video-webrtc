@@ -12,7 +12,7 @@ import UIKit
 
 /// `BackgroundReplacementVideoFrameProcessor` is a processor which receives video frames via `VideoSource`
 ///  and then creates the foreground image which is rendered on top of a background image.
-@objcMembers public class BackgroundReplacementVideoFrameProcessor: VideoSource, VideoSink {
+@objcMembers public class BackgroundReplacementVideoFrameProcessor: StandardVideoSource, StandardVideoSink {
     public var videoContentHint = VideoContentHint.motion
 
     /// Context used for processing and rendering the final output image.
@@ -51,8 +51,8 @@ import UIKit
     ///
     /// - Parameters:
     ///   - frame: New video frame to consume.
-    public func onVideoFrameReceived(frame: VideoFrame) {
-        var processedFrame: VideoFrame = frame
+    public func onVideoFrameReceived(frame: StandardVideoFrame) {
+        var processedFrame: StandardVideoFrame = frame
 
         // Update sinks at the end.
         defer {
@@ -129,12 +129,12 @@ import UIKit
     }
 
     /// Adds a video sink to the sinks set.
-    public func addVideoSink(sink: VideoSink) {
+    public func addVideoSink(sink: StandardVideoSink) {
         sinks.add(sink)
     }
 
     /// Remove a video sink from the sinks set.
-    public func removeVideoSink(sink: VideoSink) {
+    public func removeVideoSink(sink: StandardVideoSink) {
         sinks.remove(sink)
     }
 
@@ -142,9 +142,9 @@ import UIKit
     ///
     /// - Parameters:
     ///    - frame: Next frame to render.
-    public func updateSinks(frame: VideoFrame) {
+    public func updateSinks(frame: StandardVideoFrame) {
         sinks.forEach({ sink in
-            (sink as? VideoSink)?.onVideoFrameReceived(frame: frame)
+            (sink as? StandardVideoSink)?.onVideoFrameReceived(frame: frame)
         })
     }
 }

@@ -63,7 +63,7 @@ import VideoToolbox
         imageView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
     }
 
-    public func onVideoFrameReceived(frame: VideoFrame) {
+    public func onVideoFrameReceived(frame: StandardVideoFrame) {
         if Thread.isMainThread {
             renderFrame(frame: frame)
         } else {
@@ -77,7 +77,7 @@ import VideoToolbox
         imageView.image = nil
     }
 
-    private func renderFrame(frame: VideoFrame) {
+    private func renderFrame(frame: StandardVideoFrame) {
         guard let buffer = (frame.buffer as? VideoFramePixelBuffer)?.pixelBuffer else {
             return
         }

@@ -25,7 +25,7 @@ import UIKit
         self.meetingStatsCollector = meetingStatsCollector
     }
 
-    public func onReceiveFrame(frame: VideoFrame?,
+    public func onReceiveFrame(frame: StandardVideoFrame?,
                                videoId: Int,
                                attendeeId: String?,
                                pauseState: VideoPauseState) {

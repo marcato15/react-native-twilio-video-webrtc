@@ -38,7 +38,7 @@ import VideoToolbox
         self.videoRenderView = videoRenderView
     }
 
-    public func onVideoFrameReceived(frame: VideoFrame) {
+    public func onVideoFrameReceived(frame: StandardVideoFrame) {
         videoRenderView?.onVideoFrameReceived(frame: frame)
     }
 

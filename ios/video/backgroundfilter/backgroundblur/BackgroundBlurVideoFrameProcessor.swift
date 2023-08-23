@@ -8,12 +8,14 @@
 
 import CoreImage
 import UIKit
+import TwilioVideo
 
 /// `BackgroundBlurVideoFrameProcessor` is a processor which receives video frames via `VideoSource` and
 /// then applies Gaussian blur to each video frame and renders the foreground on top of the blurred image.
 /// Gaussian blur is applied using built in `CIGaussianBlur` CIFilter.
-@objcMembers public class BackgroundBlurVideoFrameProcessor: VideoSource, VideoSink {
+@objcMembers public class BackgroundBlurVideoFrameProcessor: StandardVideoSource, StandardVideoSink, VideoSource {
     public var videoContentHint = VideoContentHint.motion
+    public  var isScreencast = false
 
     /// Context used for processing and rendering the final output image.
     private let context = CIContext(options: [.cacheIntermediates: false])
@@ -45,8 +47,8 @@ import UIKit
     ///
     /// - Parameters:
     ///   - frame: New video frame to consume.
-    public func onVideoFrameReceived(frame: VideoFrame) {
-        var processedFrame: VideoFrame = frame
+    public func onVideoFrameReceived(frame: StandardVideoFrame) {
+        var processedFrame: StandardVideoFrame = frame
 
         // Update sinks at the end.
         defer {
@@ -104,7 +106,7 @@ import UIKit
         // Render the output CGImage image in the buffer.
         context.render(outputImage, to: validMergedImageBuffer)
 
-        processedFrame = VideoFrame(timestampNs: frame.timestampNs,
+        processedFrame = StandardVideoFrame(timestampNs: frame.timestampNs,
                                     rotation: frame.rotation,
                                     buffer: VideoFramePixelBuffer(pixelBuffer: validMergedImageBuffer))
     }
@@ -118,12 +120,12 @@ import UIKit
     }
 
     /// Adds a video sink to the sinks set.
-    public func addVideoSink(sink: VideoSink) {
+    public func addVideoSink(sink: StandardVideoSink) {
         sinks.add(sink)
     }
 
     /// Remove a video sink from the sinks set.
-    public func removeVideoSink(sink: VideoSink) {
+    public func removeVideoSink(sink: StandardVideoSink) {
         sinks.remove(sink)
     }
 
@@ -131,9 +133,13 @@ import UIKit
     ///
     /// - Parameters:
     ///    - frame: Next frame to render.
-    public func updateSinks(frame: VideoFrame) {
+    public func updateSinks(frame: StandardVideoFrame) {
         sinks.forEach({ sink in
-            (sink as? VideoSink)?.onVideoFrameReceived(frame: frame)
+            (sink as? StandardVideoSink)?.onVideoFrameReceived(frame: frame)
         })
+    }
+    
+    public func requestOutputFormat(_ outputFormat: VideoFormat) {
+        
     }
 }

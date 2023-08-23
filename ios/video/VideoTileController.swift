@@ -19,7 +19,7 @@ import VideoToolbox
     ///   - attendeeId: a id of user who is transmitting current frame
     ///   - pauseState: current pause state of the video being received
     func onReceiveFrame(
-        frame: VideoFrame?,
+        frame: StandardVideoFrame?,
         videoId: Int,
         attendeeId: String?,
         pauseState: VideoPauseState

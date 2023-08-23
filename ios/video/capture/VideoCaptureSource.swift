@@ -10,7 +10,7 @@ import Foundation
 
 /// `VideoCaptureSource` is an interface for various video capture sources (i.e. screen, camera, file) which can emit `VideoFrame` objects.
 /// All the APIs in this protocol can be called regardless of whether the `MeetingSession.audioVideo` is started or not.
-@objc public protocol VideoCaptureSource: VideoSource {
+@objc public protocol VideoCaptureSource: StandardVideoSource {
     /// Start capturing on this source and emitting video frames.
     func start()
 
