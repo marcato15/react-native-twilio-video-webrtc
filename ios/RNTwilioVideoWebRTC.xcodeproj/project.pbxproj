@@ -35,6 +35,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		2E834E892A96A82400DCC5FD /* video */ = {isa = PBXFileReference; lastKnownFileType = folder; path = video; sourceTree = "<group>"; };
+		2E834E8A2A96A82400DCC5FD /* selfie_segmentation_landscape.tflite */ = {isa = PBXFileReference; lastKnownFileType = file; path = selfie_segmentation_landscape.tflite; sourceTree = "<group>"; };
+		2E834E8B2A96AC8400DCC5FD /* logger */ = {isa = PBXFileReference; lastKnownFileType = folder; path = logger; sourceTree = "<group>"; };
 		738F9D552037604000058972 /* libRNTwilioVideoWebRTC.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libRNTwilioVideoWebRTC.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		738F9D63203760FF00058972 /* RCTTWVideoModule.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RCTTWVideoModule.h; sourceTree = SOURCE_ROOT; };
 		738F9D64203760FF00058972 /* RCTTWSerializable.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RCTTWSerializable.m; sourceTree = SOURCE_ROOT; };
@@ -79,6 +82,9 @@
 		738F9D572037604000058972 /* RNTwilioVideoWebRTC */ = {
 			isa = PBXGroup;
 			children = (
+				2E834E8A2A96A82400DCC5FD /* selfie_segmentation_landscape.tflite */,
+				2E834E8B2A96AC8400DCC5FD /* logger */,
+				2E834E892A96A82400DCC5FD /* video */,
 				738F9D69203760FF00058972 /* RCTTWLocalVideoViewManager.h */,
 				738F9D67203760FF00058972 /* RCTTWLocalVideoViewManager.m */,
 				738F9D6A203760FF00058972 /* RCTTWRemoteVideoViewManager.h */,

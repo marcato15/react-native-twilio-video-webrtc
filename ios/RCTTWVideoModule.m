@@ -10,6 +10,12 @@
 
 #import "RCTTWSerializable.h"
 
+#import "video/backgroundfilter/BackgroundBlurConfiguration-Swift.h"
+#import "video/backgroundfilter/BackgroundBlurStrength-Swift.h"
+#import "video/backgroundfilter/BackgroundBlurVideoFrameProcessor-Swift.h"
+#import "video/capture/DefaultCameraCaptureSource-Swift.h"
+#import "logger/ConsoleLogger-Swift.h"
+
 static NSString* roomDidConnect               = @"roomDidConnect";
 static NSString* roomDidDisconnect            = @"roomDidDisconnect";
 static NSString* roomDidFailToConnect         = @"roomDidFailToConnect";
@@ -191,6 +197,7 @@ RCT_EXPORT_METHOD(startLocalVideo) {
           [self sendEventCheckingListenerWithName:cameraDidStart body:nil];
       }
   }];
+    
 }
 
 RCT_EXPORT_METHOD(startLocalAudio) {
@@ -412,8 +419,17 @@ RCT_EXPORT_METHOD(connect:(NSString *)accessToken roomName:(NSString *)roomName 
   TVICameraSourceOptions *options = [TVICameraSourceOptions optionsWithBlock:^(TVICameraSourceOptionsBuilder * _Nonnull builder) {
 
   }];
-  self.camera = [[TVICameraSource alloc] initWithOptions:options delegate:self];
-  self.localVideoTrack = [TVILocalVideoTrack trackWithSource:self.camera enabled:enableVideo name:@"camera"];
+    
+    
+    ConsoleLogger blurLogger = [[ConsoleLogger alloc] init:@"BackgroundBlurProcessor"];
+    BackgroundBlurConfiguration backgroundBlurConfigurations = [[BackgroundBlurConfiguration alloc] init:blurLogger blurStrength: BackgroundBlurStrength.low];
+    BackgroundBlurVideoFrameProcessor backgroundBlurVideoFrameProcessor = [[BackgroundBlurVideoFrameProcessor alloc] init:backgroundBlurConfigurations];
+                                                                
+    ConsoleLogger cameraLogger = [[ConsoleLogger alloc] init:@"DefaultCameraCaptureSource"];
+    DefaultCameraCaptureSource cameraCaptureSource = [[DefaultCameraCaptureSource alloc] init:cameraLogger]
+    [cameraCaptureSource addVideoSink:backgroundBlurVideoFrameProcessor]
+    
+  self.localVideoTrack = [TVILocalVideoTrack trackWithSource:backgroundBlurVideoFrameProcessor enabled:enableVideo name:@"camera"];
   [self startCameraCapture:cameraType]; 
 
   if (self.localAudioTrack) {
